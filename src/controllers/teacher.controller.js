@@ -23,6 +23,16 @@ export const createTeacher = asyncHandler(async (req, res) => {
         .json(new ApiResponse(201, "Teacher created successfully", teacher));
 });
 
+export const getAllTeachers=asyncHandler(async (req,res) => {
+    const teachers=await Teacher.find();
+
+    if (!teachers || teachers.length === 0) {
+        return res.status(404).json(new ApiResponse(404, 'No Teachers found',teachers));
+    }
+
+    return res.status(200).json(new ApiResponse(200, 'Teachers retrieved successfully', teachers));
+})
+
 
 
 

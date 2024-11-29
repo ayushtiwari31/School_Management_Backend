@@ -24,5 +24,5 @@ const teacherSchema = new Schema(
     { timestamps: true } 
 );
 
-// Export the Teacher model
+
 export const Teacher = mongoose.model("Teacher", teacherSchema);
