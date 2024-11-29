@@ -6,7 +6,6 @@ import { Teacher } from "../models/teacher.model.js";
 import {Student} from "../models/student.model.js"
 
 
-// Create a new course
 export const createCourse = asyncHandler(async (req, res) => {
     const { subjectName, subjectCode } = req.body;
 
@@ -18,6 +17,20 @@ export const createCourse = asyncHandler(async (req, res) => {
     const course = await Subject.create({subjectName, subjectCode });
     return res.status(201).json(new ApiResponse(201, "Course created successfully", course));
 });
+
+
+export const getAllSubjects=asyncHandler(async (req,res) => {
+    const subjects = await Subject.find()
+        .populate('teacher', 'name email') // Populate teacher's name and email
+        .populate('students', 'name email') // Populate students' name and email
+        .populate('tests', 'testName date');
+
+    if (!subjects || subjects.length === 0) {
+        return res.status(404).json(new ApiResponse(404, 'No Subjects found',subjects));
+    }
+
+    return res.status(200).json(new ApiResponse(200, 'Subjects retrieved successfully', subjects));
+})
 
 // Assign a teacher to a course or create a new course if it doesn't exist
 export const assignTeacherToCourse = asyncHandler(async (req, res) => {
