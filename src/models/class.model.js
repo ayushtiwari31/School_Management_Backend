@@ -16,13 +16,15 @@ const classSchema = new Schema(
         students: [
             {
                 type: Schema.Types.ObjectId,
-                ref: "Student" 
+                ref: "Student" ,
+                default: []
             }
         ],
         subjects:[
             {
                 type:Schema.Types.ObjectId,
-                ref:"Subject"
+                ref:"Subject",
+                default: []
             }
         ]
     },

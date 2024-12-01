@@ -14,6 +14,12 @@ const subjectSchema = new Schema(
         teacher: {
             type: Schema.Types.ObjectId,
             ref: "Teacher", 
+            default:null
+        },
+        class: {
+            type: Schema.Types.ObjectId,
+            ref: "Class", 
+            default:null,
         },
         students: [
             {

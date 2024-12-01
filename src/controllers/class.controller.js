@@ -4,8 +4,7 @@ import { Student } from "../models/student.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/Apiresponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
-
-
+import mongoose from 'mongoose';
 
 export const createClass= asyncHandler(async (req, res) => {
     const { className, section} = req.body;
@@ -29,7 +28,7 @@ export const createClass= asyncHandler(async (req, res) => {
 });
 
 export const getAllClasses=asyncHandler(async (req,res) => {
-    const classes=await Class.find();
+    const classes=await Class.find()
 
     if (!classes || classes.length === 0) {
         return res.status(404).json(new ApiResponse(404, 'No classes found',classes));
@@ -37,6 +36,8 @@ export const getAllClasses=asyncHandler(async (req,res) => {
 
     return res.status(200).json(new ApiResponse(200, 'Classes retrieved successfully', classes));
 })
+
+
 
 export const getClassById = asyncHandler(async (req, res) => {
     const { id } = req.params;
@@ -98,4 +99,33 @@ export const addStudentsToBranchByCode = asyncHandler(async (req, res) => {
                 createdStudents,
             })
         );
+});
+
+
+export const getAllClassSubjects = asyncHandler(async (req, res) => {
+    const { classId } = req.params;
+
+    // console.log("classId:", classId);
+
+    // Validate input
+    if (!classId) {
+        throw new ApiError(400, "classId is required");
+    }
+
+    if (!classId.match(/^[0-9a-fA-F]{24}$/)) {
+        throw new ApiError(400, "Invalid classId format");
+    }
+
+
+        // Fetch class and populate subjects
+        const classData = await Class.findById(classId).populate('subjects');
+
+        // Check if class or subjects are found
+        if (!classData || !classData.subjects || classData.subjects.length === 0) {
+            return res.status(404).json(new ApiResponse(404, 'No subjects found', classData));
+        }
+
+        // Return the populated subjects
+        return res.status(200).json(new ApiResponse(200, 'Subjects retrieved successfully', classData));
+    
 });

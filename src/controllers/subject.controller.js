@@ -5,6 +5,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { Teacher } from "../models/teacher.model.js";
 import {Student} from "../models/student.model.js"
 import { Class } from "../models/class.model.js";
+import mongoose from "mongoose";
 
 export const createCourse = asyncHandler(async (req, res) => {
     const { classId } = req.query;
@@ -37,6 +38,8 @@ export const createCourse = asyncHandler(async (req, res) => {
 
     // Add the course ID to the subjects array in the Class document
     classDocument.subjects.push(course._id);
+    course.class=classDocument._id;
+    await course.save();
     await classDocument.save();
 
     // Return success response
@@ -59,10 +62,13 @@ export const getAllSubjects=asyncHandler(async (req,res) => {
 
 // Assign a teacher to a course or create a new course if it doesn't exist
 export const assignTeacherToCourse = asyncHandler(async (req, res) => {
-    const { subjectCode, subjectName, name, email } = req.body;
+    const {subjectId}=req.params;
+    const {  name, email } = req.body;
 
+
+    console.log(subjectId);
     // Validate inputs
-    if (!subjectCode || !subjectName || !name || !email) {
+    if ( !name || !email) {
         throw new ApiError(400, "Missing required fields");
     }
 
@@ -73,63 +79,61 @@ export const assignTeacherToCourse = asyncHandler(async (req, res) => {
     }
 
     // Find or create the course based on course code
-    let course = await Subject.findOne({ subjectCode,subjectName });
-    if (!course) {
-        // If course doesn't exist, create a new course
-        course = await Subject.create({ courseCode, courseName });
-    }
+    let course = await Subject.findById(subjectId);
+   
 
-    // Assign the teacher to the course if not already assigned
-    if (!course.teacher || course.teacher.toString() !== teacher._id.toString()) {
+    
         course.teacher = teacher._id;
         await course.save();
-    }
+
 
     // Add the course to the teacher's courses array if not already present
     if (!teacher.subjects.includes(course._id)) {
         teacher.subjects.push(course._id);
         await teacher.save();
     }
-
+    const updatedCourse = await Subject.findById(subjectId).populate('teacher');
     // Return success response with course and teacher info
-    return res.status(200).json(new ApiResponse(200, "Teacher assigned to course successfully", { course, teacher }));
+    return res.status(200).json(new ApiResponse(200, "Teacher assigned to course successfully", updatedCourse));
 });
 
 
 
 export const addStudentsToCourse = asyncHandler(async (req, res) => {
-    const { courseId } = req.params;
+    const { subjectId } = req.params;
     const { students } = req.body; // Array of { name, rollNo }
 
     // Validate course ID
-    if (!mongoose.isValidObjectId(courseId)) {
+    if (!mongoose.isValidObjectId(subjectId)) {
         throw new ApiError(400, "Invalid course ID");
     }
 
-    // Check if the course exists
-    const course = await Subject.findById(courseId);
+    
+    const course = await Subject.findById(subjectId);
     if (!course) {
         throw new ApiError(404, "Course not found");
     }
 
     // Process each student
-    for (const { name, rollNo } of students) {
-        let student = await Student.findOne({ rollNo });
+    for (const { name,gender, rollNo,registrationNumber } of students) {
+        let student = await Student.findOne({ registrationNumber});
 
-        // Create a new student if they don't exist
+       
         if (!student) {
             student = await Student.create({
                 name,
                 rollNo,
-                courses: [courseId],
+                gender,
+                registrationNumber,
             });
-        } else {
-            // Add the course to the student's courses array if not already present
-            if (!student.courses.includes(courseId)) {
-                student.courses.push(courseId);
+        } 
+
+       
+        if (!student.subjects.includes(subjectId)) {
+                student.subjects.push(subjectId);
                 await student.save();
-            }
         }
+        
 
         // Add the student to the course's students array if not already present
         if (!course.students.includes(student._id)) {
@@ -138,8 +142,30 @@ export const addStudentsToCourse = asyncHandler(async (req, res) => {
         }
     }
 
-    // Return the updated course and confirmation message
+   
     return res
         .status(200)
         .json(new ApiResponse(200, "Students added to course successfully", course));
 });
+
+
+
+export const getSubject=asyncHandler(async (req,res) => {
+
+    const {subjectId}=req.params;
+    const subject=await Subject.findById(subjectId).populate("teacher")
+    .populate({
+        path: "students",
+        select: "-createdAt -updatedAt -subjects" 
+    })
+        .populate("tests")
+        .populate("class","_id className section");
+
+    console.log(subject);
+    if (!subject || subject.length === 0) {
+        return res.status(404).json(new ApiResponse(404, 'No Subjects found',subject));
+    }
+
+    return res.status(200).json(new ApiResponse(200, 'Subjects retrieved successfully', subject));
+})
+

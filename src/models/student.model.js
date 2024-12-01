@@ -11,13 +11,13 @@ const studentSchema = new Schema(
         rollNo: {
             type: String,
             required: true,
-            unique: true 
+            // unique: true 
         },
-        classes: {
-            type: Schema.Types.ObjectId,
-            ref: "Classes", 
-            // required: true 
-        },
+        // classes: {
+        //     type: Schema.Types.ObjectId,
+        //     ref: "Classes", 
+        //     // required: true 
+        // },
         gender: {
             type: String,
             enum: ["Male", "Female", "Other"], // Enum for gender options
