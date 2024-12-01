@@ -18,6 +18,12 @@ const classSchema = new Schema(
                 type: Schema.Types.ObjectId,
                 ref: "Student" 
             }
+        ],
+        subjects:[
+            {
+                type:Schema.Types.ObjectId,
+                ref:"Subject"
+            }
         ]
     },
     { timestamps: true }

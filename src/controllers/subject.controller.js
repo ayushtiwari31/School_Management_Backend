@@ -4,18 +4,43 @@ import { ApiResponse } from "../utils/Apiresponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { Teacher } from "../models/teacher.model.js";
 import {Student} from "../models/student.model.js"
-
+import { Class } from "../models/class.model.js";
 
 export const createCourse = asyncHandler(async (req, res) => {
-    const { subjectName, subjectCode } = req.body;
+    const { classId } = req.query;
+    const { subjectName, subjectCode } = req.body; 
 
+    
+    if (!classId) {
+        throw new ApiError(400, "classId is required");
+    }
+
+   
+    if (!subjectName) {
+        throw new ApiError(400, "SubjectName is required");
+    }
+
+    // Check if a course with the same code already exists
     const existingCourse = await Subject.findOne({ subjectCode: subjectCode.trim() });
     if (existingCourse) {
         throw new ApiError(400, "Course with this code already exists");
     }
 
-    const course = await Subject.create({subjectName, subjectCode });
-    return res.status(201).json(new ApiResponse(201, "Course created successfully", course));
+    // Create the course
+    const course = await Subject.create({ subjectName, subjectCode });
+
+    
+    const classDocument = await Class.findById(classId);
+    if (!classDocument) {
+        throw new ApiError(404, "Class not found");
+    }
+
+    // Add the course ID to the subjects array in the Class document
+    classDocument.subjects.push(course._id);
+    await classDocument.save();
+
+    // Return success response
+    return res.status(201).json(new ApiResponse(201, "Course created and added to the class successfully", { course, class: classDocument }));
 });
 
 
